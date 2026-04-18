@@ -26,9 +26,10 @@ const generateTokenAndSetCookie = (res, userId, role, name) => {
   });
 
   res.cookie('token', token, {
+    handle: 'PROMPT_AI_AUTH',
     httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: true, // Required for SameSite: None (Render/Vercel use HTTPS)
+    sameSite: 'none', // Allow cross-origin cookie sharing between Vercel and Render
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/',
   });
@@ -87,7 +88,10 @@ exports.login = asyncHandler(async (req, res) => {
 exports.logout = (req, res) => {
   res.cookie('token', '', {
     httpOnly: true,
+    secure: true,
+    sameSite: 'none',
     expires: new Date(0),
+    path: '/',
   });
   sendResponse(res, 200, 'Logged out successfully');
 };
