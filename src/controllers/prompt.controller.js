@@ -20,12 +20,11 @@ exports.getPrompts = asyncHandler(async (req, res) => {
     query.$text = { $search: req.query.search };
   }
 
-  // Interest-based personalization: boost prompts in user's interest categories
+  // Interest-based personalization decoration
   const userInterests = req.user?.interests || [];
   
-  let prompts;
+  let resultPrompts;
   if (userInterests.length > 0 && !req.query.category) {
-    // Fetch all, sort: user's interest categories first (by score desc), then rest
     const [interested, others] = await Promise.all([
       Prompt.find({ ...query, category: { $in: userInterests } })
         .sort({ score: -1, createdAt: -1 })
@@ -36,32 +35,41 @@ exports.getPrompts = asyncHandler(async (req, res) => {
         .populate('category', 'name')
         .populate('author', 'name'),
     ]);
-    const all = [...interested, ...others];
-    const total = all.length;
-    prompts = all.slice(skip, skip + limit);
-    return sendResponse(res, 200, 'Prompts fetched', {
-      prompts,
-      total,
-      page,
-      pages: Math.ceil(total / limit),
-      isPersonalized: true,
-    });
+    resultPrompts = [...interested, ...others];
+  } else {
+    resultPrompts = await Prompt.find(query)
+      .sort({ score: -1, createdAt: -1 })
+      .populate('category', 'name')
+      .populate('author', 'name');
   }
 
-  prompts = await Prompt.find(query)
-    .sort({ score: -1, createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .populate('category', 'name')
-    .populate('author', 'name');
+  const total = resultPrompts.length;
+  const paginatedPrompts = resultPrompts.slice(skip, skip + limit);
 
-  const total = await Prompt.countDocuments(query);
+  // Engagement decoration for authenticated users
+  let decoratedPrompts = paginatedPrompts.map(p => p.toObject());
+  if (req.user) {
+    const [userLikes, userSaves] = await Promise.all([
+      Like.find({ userId: req.user._id, promptId: { $in: paginatedPrompts.map(p => p._id) } }),
+      Save.find({ userId: req.user._id, promptId: { $in: paginatedPrompts.map(p => p._id) } })
+    ]);
+
+    const likedPromptIds = new Set(userLikes.map(l => l.promptId.toString()));
+    const savedPromptIds = new Set(userSaves.map(s => s.promptId.toString()));
+
+    decoratedPrompts = decoratedPrompts.map(p => ({
+      ...p,
+      isLiked: likedPromptIds.has(p._id.toString()),
+      isSaved: savedPromptIds.has(p._id.toString())
+    }));
+  }
 
   sendResponse(res, 200, 'Prompts fetched', {
-    prompts,
+    prompts: decoratedPrompts,
     total,
     page,
     pages: Math.ceil(total / limit),
+    isPersonalized: userInterests.length > 0 && !req.query.category,
   });
 });
 
