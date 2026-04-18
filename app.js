@@ -20,7 +20,7 @@ const app = express();
 // Security Middleware
 app.use(helmet());
 app.use(cors({
-  origin: env.CORS_ORIGIN,
+  origin: ['https://prompt-a-icleint-boq8.vercel.app', 'http://localhost:3000'],
   credentials: true,
 }));
 

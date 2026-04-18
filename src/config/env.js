@@ -11,7 +11,7 @@ const envSchema = zod.object({
   CLOUDINARY_CLOUD_NAME: zod.string(),
   CLOUDINARY_API_KEY: zod.string(),
   CLOUDINARY_API_SECRET: zod.string(),
-  CORS_ORIGIN: zod.string().default('http://localhost:3000'),
+  CORS_ORIGIN: zod.string().default('https://prompt-a-icleint-boq8.vercel.app'),
   NODE_ENV: zod.enum(['development', 'production', 'test']).default('development'),
 });
 
