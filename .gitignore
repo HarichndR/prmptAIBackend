@@ -1,0 +1,35 @@
+# 🚀 PromptAI Backend - Production Exclusion Protocol
+
+# Dependencies
+node_modules/
+dist/
+build/
+npm-cache/
+
+# Environment / Sensitive Data
+.env
+.env.local
+.env.production
+*.pem
+*.key
+
+# Logs & Diagnostics
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Database
+dump/
+data/
+
+# OS Specific
+.DS_Store
+Thumbs.db
+
+# Misc
+.idea/
+.vscode/
+.gemini/
